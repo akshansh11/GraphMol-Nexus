@@ -1,0 +1,5 @@
+streamlit 
+rdkit 
+networkx 
+matplotlib 
+numpy
