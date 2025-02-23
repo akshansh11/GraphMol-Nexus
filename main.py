@@ -1,15 +1,24 @@
-import rdkit
 import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
-# Import RDKit
+import os
+os.environ['RDKIT_CANVAS'] = '1'  # Enable RDKit canvas
+
 try:
+    import rdkit
     from rdkit import Chem
     from rdkit.Chem import Draw
     from rdkit.Chem import AllChem
+    from rdkit.Chem import Descriptors
+    from rdkit.Chem import rdDepictor
+    rdDepictor.SetPreferCoordGen(True)
 except ImportError:
-    st.error("Please install RDKit using: pip install rdkit")
+    st.error("""RDKit import failed. Please run these commands:
+    ```
+    pip install rdkit-pypi
+    ```
+    """)
     st.stop()
 
 # Set page configuration
@@ -53,6 +62,9 @@ def create_molecular_graph(smiles):
         if mol is None:
             return None, None
         
+        # Generate 2D coordinates for the molecule
+        rdDepictor.Compute2DCoords(mol)
+        
         # Create graph
         G = nx.Graph()
         
@@ -62,13 +74,15 @@ def create_molecular_graph(smiles):
                       atomic_num=atom.GetAtomicNum(),
                       symbol=atom.GetSymbol(),
                       formal_charge=atom.GetFormalCharge(),
-                      implicit_valence=atom.GetImplicitValence())
+                      implicit_valence=atom.GetImplicitValence(),
+                      is_aromatic=atom.GetIsAromatic())
         
         # Add edges (bonds)
         for bond in mol.GetBonds():
             G.add_edge(bond.GetBeginAtomIdx(),
                       bond.GetEndAtomIdx(),
-                      bond_type=bond.GetBondTypeAsDouble())
+                      bond_type=bond.GetBondTypeAsDouble(),
+                      is_aromatic=bond.GetIsAromatic())
         
         return G, mol
     except Exception as e:
@@ -82,7 +96,8 @@ def visualize_graph(G, mol):
         fig.patch.set_facecolor('#1a1a2e')
         
         # Plot molecular structure
-        img = Draw.MolToImage(mol)
+        drawer = Draw.rdDepictor.Compute2DCoords(mol)
+        img = Draw.MolToImage(mol, size=(400, 400))
         ax1.imshow(img)
         ax1.axis('off')
         ax1.set_title('Molecular Structure', pad=20, fontsize=14, color='white')
@@ -91,8 +106,23 @@ def visualize_graph(G, mol):
         # Plot graph representation
         pos = nx.spring_layout(G, k=1, iterations=50)
         
+        # Create color map for atoms
+        atom_colors = {
+            1: '#FFFFFF',   # H - White
+            6: '#808080',   # C - Gray
+            7: '#0000FF',   # N - Blue
+            8: '#FF0000',   # O - Red
+            9: '#90EE90',   # F - Light green
+            15: '#FFA500',  # P - Orange
+            16: '#FFFF00',  # S - Yellow
+            17: '#00FF00',  # Cl - Green
+            35: '#A52A2A',  # Br - Brown
+            53: '#800080'   # I - Purple
+        }
+        
         # Draw nodes with different colors based on atomic number
-        node_colors = [plt.cm.plasma(atom['atomic_num'] / 20) for _, atom in G.nodes(data=True)]
+        node_colors = [atom_colors.get(G.nodes[node]['atomic_num'], '#FFFFFF') 
+                      for node in G.nodes()]
         nx.draw_networkx_nodes(G, pos, node_color=node_colors, 
                              node_size=1000, alpha=0.7, ax=ax2)
         
@@ -120,12 +150,15 @@ def get_molecule_properties(mol):
     """Calculate and return basic molecular properties"""
     try:
         properties = {
-            'Molecular Weight': Chem.Descriptors.ExactMolWt(mol),
+            'Molecular Weight': Descriptors.ExactMolWt(mol),
             'Number of Atoms': mol.GetNumAtoms(),
             'Number of Bonds': mol.GetNumBonds(),
             'Number of Rings': Chem.rdMolDescriptors.CalcNumRings(mol),
-            'TPSA': Chem.Descriptors.TPSA(mol),
-            'LogP': Chem.Descriptors.MolLogP(mol)
+            'TPSA': Descriptors.TPSA(mol),
+            'LogP': Descriptors.MolLogP(mol),
+            'H-Bond Donors': Descriptors.NumHDonors(mol),
+            'H-Bond Acceptors': Descriptors.NumHAcceptors(mol),
+            'Rotatable Bonds': Descriptors.NumRotatableBonds(mol)
         }
         return properties
     except Exception as e:
@@ -149,7 +182,10 @@ else:
         "Aspirin": "CC(=O)OC1=CC=CC=C1C(=O)O",
         "Caffeine": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",
         "Paracetamol": "CC(=O)NC1=CC=C(O)C=C1",
-        "Ibuprofen": "CC(C)CC1=CC=C(C=C1)[C@H](C)C(=O)O"
+        "Ibuprofen": "CC(C)CC1=CC=C(C=C1)[C@H](C)C(=O)O",
+        "Benzene": "c1ccccc1",
+        "Ethanol": "CCO",
+        "Glucose": "C([C@@H]1[C@H]([C@@H]([C@H](C(O1)O)O)O)O)O"
     }
     selected_molecule = st.sidebar.selectbox("Choose a molecule:", 
                                            list(example_molecules.keys()))
