@@ -22,14 +22,13 @@ except ImportError:
     st.stop()
 
 # Set page configuration
-st.set_page_config(page_title="MoleculeVortex", layout="wide")
+st.set_page_config(page_title="GraphMol Nexus", layout="wide")
 
-# Custom CSS for futuristic styling
+# Custom CSS for better visibility
 st.markdown("""
     <style>
     .stApp {
         background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-        color: #e1e1e1;
     }
     .stButton>button {
         background: linear-gradient(90deg, #4CAF50, #45a049);
@@ -42,15 +41,36 @@ st.markdown("""
     .stButton>button:hover {
         box-shadow: 0 0 25px rgba(76, 175, 80, 0.5);
     }
-    .css-1d391kg {  /* Sidebar */
+    .css-1d391kg {
         background: rgba(22, 33, 62, 0.9);
     }
     .stTitle {
         text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+        color: white !important;
     }
-    h2 {
-        color: #4CAF50;
+    h1, h2, h3 {
+        color: #4CAF50 !important;
         text-shadow: 0 0 5px rgba(76, 175, 80, 0.2);
+    }
+    .css-1xarl3l {
+        color: #E1E1E1 !important;
+        font-size: 2rem !important;
+        font-weight: 600 !important;
+    }
+    .css-1wivap2 {
+        color: #4CAF50 !important;
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+    }
+    .stMetric {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid rgba(76, 175, 80, 0.2);
+        margin: 5px;
+    }
+    .stMarkdown, .stText {
+        color: white !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -166,7 +186,7 @@ def get_molecule_properties(mol):
         return {}
 
 # Main Streamlit app
-st.title("🌀 MoleculeVortex")
+st.title("GraphMol Nexus")
 st.write("Convert molecular structures into interactive graph visualizations")
 
 # Input section
@@ -215,7 +235,12 @@ if smiles_input:
             cols = st.columns(3)
             for idx, (prop, value) in enumerate(properties.items()):
                 with cols[idx % 3]:
-                    st.metric(prop, f"{value:.2f}" if isinstance(value, float) else value)
+                    st.metric(
+                        prop,
+                        f"{value:.2f}" if isinstance(value, float) else value,
+                        delta=None,
+                        help=f"Value for {prop}"
+                    )
             
             # Display graph properties
             st.header("Graph Properties")
@@ -230,7 +255,12 @@ if smiles_input:
             cols = st.columns(2)
             for idx, (prop, value) in enumerate(graph_props.items()):
                 with cols[idx % 2]:
-                    st.metric(prop, f"{value:.2f}" if isinstance(value, float) else value)
+                    st.metric(
+                        prop,
+                        f"{value:.2f}" if isinstance(value, float) else value,
+                        delta=None,
+                        help=f"Value for {prop}"
+                    )
 
 # Add information about usage
 st.sidebar.markdown("""
