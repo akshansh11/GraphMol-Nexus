@@ -22,7 +22,7 @@ except ImportError:
     st.stop()
 
 # Set page configuration
-st.set_page_config(page_title="GraphMol Nexus", layout="wide")
+st.set_page_config(page_title="MoleculeVortex", layout="wide")
 
 # Custom CSS for better visibility
 st.markdown("""
@@ -52,15 +52,29 @@ st.markdown("""
         color: #4CAF50 !important;
         text-shadow: 0 0 5px rgba(76, 175, 80, 0.2);
     }
-    .css-1xarl3l {
-        color: #E1E1E1 !important;
+    /* Make ALL metric text white and bright */
+    div[data-testid="stMetricValue"] > div {
+        color: white !important;
         font-size: 2rem !important;
         font-weight: 600 !important;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
     }
-    .css-1wivap2 {
-        color: #4CAF50 !important;
+    div[data-testid="stMetricLabel"] {
+        color: white !important;
         font-size: 1rem !important;
-        font-weight: 600 !important;
+        font-weight: 500 !important;
+        opacity: 0.9;
+    }
+    /* Make metric cards more visible */
+    div[data-testid="metric-container"] {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        border-radius: 8px !important;
+        padding: 10px !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    div[data-testid="metric-container"]:hover {
+        background-color: rgba(255, 255, 255, 0.15) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
     }
     .stMetric {
         background: rgba(255, 255, 255, 0.05);
@@ -186,7 +200,7 @@ def get_molecule_properties(mol):
         return {}
 
 # Main Streamlit app
-st.title("GraphMol Nexus")
+st.title("🌀 MoleculeVortex")
 st.write("Convert molecular structures into interactive graph visualizations")
 
 # Input section
