@@ -1,10 +1,36 @@
 import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
-from rdkit import Chem
-from rdkit.Chem import Draw
-from rdkit.Chem import AllChem
 import numpy as np
+import sys
+import subprocess
+import pkg_resources
+
+# Function to install required packages
+def install_packages():
+    try:
+        # Install rdkit specifically for Python 3.9
+        subprocess.check_call([f"{sys.executable}", "-m", "pip", "install", "rdkit==2023.3.2"])
+    except Exception as e:
+        st.error(f"Failed to install packages: {str(e)}")
+        return False
+    return True
+
+# Try importing rdkit, install if not present
+try:
+    from rdkit import Chem
+    from rdkit.Chem import Draw
+    from rdkit.Chem import AllChem
+except ImportError:
+    st.warning("Installing required packages...")
+    if install_packages():
+        try:
+            from rdkit import Chem
+            from rdkit.Chem import Draw
+            from rdkit.Chem import AllChem
+        except ImportError:
+            st.error("Failed to import RDKit. Please ensure you're using Python 3.9")
+            st.stop()
 
 # Set page configuration
 st.set_page_config(page_title="MoleculeVortex", layout="wide")
@@ -33,82 +59,98 @@ st.markdown("""
     .stTitle {
         text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
     }
+    h2 {
+        color: #4CAF50;
+        text-shadow: 0 0 5px rgba(76, 175, 80, 0.2);
+    }
     </style>
     """, unsafe_allow_html=True)
 
 def create_molecular_graph(smiles):
     """Convert SMILES to molecular graph using NetworkX"""
-    mol = Chem.MolFromSmiles(smiles)
-    if mol is None:
+    try:
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            return None, None
+        
+        # Create graph
+        G = nx.Graph()
+        
+        # Add nodes (atoms)
+        for atom in mol.GetAtoms():
+            G.add_node(atom.GetIdx(),
+                      atomic_num=atom.GetAtomicNum(),
+                      symbol=atom.GetSymbol(),
+                      formal_charge=atom.GetFormalCharge(),
+                      implicit_valence=atom.GetImplicitValence())
+        
+        # Add edges (bonds)
+        for bond in mol.GetBonds():
+            G.add_edge(bond.GetBeginAtomIdx(),
+                      bond.GetEndAtomIdx(),
+                      bond_type=bond.GetBondTypeAsDouble())
+        
+        return G, mol
+    except Exception as e:
+        st.error(f"Error creating molecular graph: {str(e)}")
         return None, None
-    
-    # Create graph
-    G = nx.Graph()
-    
-    # Add nodes (atoms)
-    for atom in mol.GetAtoms():
-        G.add_node(atom.GetIdx(),
-                  atomic_num=atom.GetAtomicNum(),
-                  symbol=atom.GetSymbol(),
-                  formal_charge=atom.GetFormalCharge(),
-                  implicit_valence=atom.GetImplicitValence())
-    
-    # Add edges (bonds)
-    for bond in mol.GetBonds():
-        G.add_edge(bond.GetBeginAtomIdx(),
-                  bond.GetEndAtomIdx(),
-                  bond_type=bond.GetBondTypeAsDouble())
-    
-    return G, mol
 
 def visualize_graph(G, mol):
-    """Create an interactive visualization of the molecular graph with enhanced accuracy"""
-    # Use 3D conformer generation for more accurate spatial representation
-    mol_3d = Chem.AddHs(mol)
-    AllChem.EmbedMolecule(mol_3d, randomSeed=42)
-    AllChem.MMFFOptimizeMolecule(mol_3d)  # Energy minimization
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 7))
-    
-    # Plot molecular structure
-    img = Draw.MolToImage(mol)
-    ax1.imshow(img)
-    ax1.axis('off')
-    ax1.set_title('Molecular Structure', pad=20, fontsize=14)
-    
-    # Plot graph representation
-    pos = nx.spring_layout(G, k=1, iterations=50)
-    
-    # Draw nodes with different colors based on atomic number
-    node_colors = [plt.cm.Set3(atom['atomic_num'] / 20) for _, atom in G.nodes(data=True)]
-    nx.draw_networkx_nodes(G, pos, node_color=node_colors, 
-                          node_size=1000, alpha=0.7, ax=ax2)
-    
-    # Draw edges with varying thickness based on bond type
-    edge_weights = [G[u][v]['bond_type'] * 2 for u, v in G.edges()]
-    nx.draw_networkx_edges(G, pos, width=edge_weights, 
-                          edge_color='gray', alpha=0.5, ax=ax2)
-    
-    # Add labels
-    labels = {i: G.nodes[i]['symbol'] for i in G.nodes()}
-    nx.draw_networkx_labels(G, pos, labels, font_size=12, 
-                          font_weight='bold', ax=ax2)
-    
-    ax2.set_title('Graph Representation', pad=20, fontsize=14)
-    ax2.axis('off')
-    
-    return fig
+    """Create an interactive visualization of the molecular graph"""
+    try:
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 7))
+        fig.patch.set_facecolor('#1a1a2e')
+        
+        # Plot molecular structure
+        img = Draw.MolToImage(mol)
+        ax1.imshow(img)
+        ax1.axis('off')
+        ax1.set_title('Molecular Structure', pad=20, fontsize=14, color='white')
+        ax1.set_facecolor('#1a1a2e')
+        
+        # Plot graph representation
+        pos = nx.spring_layout(G, k=1, iterations=50)
+        
+        # Draw nodes with different colors based on atomic number
+        node_colors = [plt.cm.plasma(atom['atomic_num'] / 20) for _, atom in G.nodes(data=True)]
+        nx.draw_networkx_nodes(G, pos, node_color=node_colors, 
+                             node_size=1000, alpha=0.7, ax=ax2)
+        
+        # Draw edges with varying thickness based on bond type
+        edge_weights = [G[u][v]['bond_type'] * 2 for u, v in G.edges()]
+        nx.draw_networkx_edges(G, pos, width=edge_weights, 
+                             edge_color='lightblue', alpha=0.5, ax=ax2)
+        
+        # Add labels
+        labels = {i: G.nodes[i]['symbol'] for i in G.nodes()}
+        nx.draw_networkx_labels(G, pos, labels, font_size=12, 
+                              font_weight='bold', ax=ax2)
+        
+        ax2.set_title('Graph Representation', pad=20, fontsize=14, color='white')
+        ax2.set_facecolor('#1a1a2e')
+        ax2.axis('off')
+        
+        plt.tight_layout()
+        return fig
+    except Exception as e:
+        st.error(f"Error visualizing graph: {str(e)}")
+        return None
 
 def get_molecule_properties(mol):
     """Calculate and return basic molecular properties"""
-    properties = {
-        'Molecular Weight': Chem.Descriptors.ExactMolWt(mol),
-        'Number of Atoms': mol.GetNumAtoms(),
-        'Number of Bonds': mol.GetNumBonds(),
-        'Number of Rings': Chem.rdMolDescriptors.CalcNumRings(mol),
-        'TPSA': Chem.Descriptors.TPSA(mol),
-        'LogP': Chem.Descriptors.MolLogP(mol)
-    }
-    return properties
+    try:
+        properties = {
+            'Molecular Weight': Chem.Descriptors.ExactMolWt(mol),
+            'Number of Atoms': mol.GetNumAtoms(),
+            'Number of Bonds': mol.GetNumBonds(),
+            'Number of Rings': Chem.rdMolDescriptors.CalcNumRings(mol),
+            'TPSA': Chem.Descriptors.TPSA(mol),
+            'LogP': Chem.Descriptors.MolLogP(mol)
+        }
+        return properties
+    except Exception as e:
+        st.error(f"Error calculating properties: {str(e)}")
+        return {}
 
 # Main Streamlit app
 st.title("🌀 MoleculeVortex")
@@ -145,32 +187,34 @@ if smiles_input:
     else:
         # Display visualization
         fig = visualize_graph(G, mol)
-        st.pyplot(fig)
+        if fig is not None:
+            st.pyplot(fig)
         
         # Display molecular properties
         st.header("Molecular Properties")
         properties = get_molecule_properties(mol)
         
-        # Create three columns for properties
-        cols = st.columns(3)
-        for idx, (prop, value) in enumerate(properties.items()):
-            with cols[idx % 3]:
-                st.metric(prop, f"{value:.2f}" if isinstance(value, float) else value)
-        
-        # Display graph properties
-        st.header("Graph Properties")
-        graph_props = {
-            "Number of Nodes": G.number_of_nodes(),
-            "Number of Edges": G.number_of_edges(),
-            "Average Degree": sum(dict(G.degree()).values()) / G.number_of_nodes(),
-            "Graph Density": nx.density(G)
-        }
-        
-        # Create two columns for graph properties
-        cols = st.columns(2)
-        for idx, (prop, value) in enumerate(graph_props.items()):
-            with cols[idx % 2]:
-                st.metric(prop, f"{value:.2f}" if isinstance(value, float) else value)
+        if properties:
+            # Create three columns for properties
+            cols = st.columns(3)
+            for idx, (prop, value) in enumerate(properties.items()):
+                with cols[idx % 3]:
+                    st.metric(prop, f"{value:.2f}" if isinstance(value, float) else value)
+            
+            # Display graph properties
+            st.header("Graph Properties")
+            graph_props = {
+                "Number of Nodes": G.number_of_nodes(),
+                "Number of Edges": G.number_of_edges(),
+                "Average Degree": sum(dict(G.degree()).values()) / G.number_of_nodes(),
+                "Graph Density": nx.density(G)
+            }
+            
+            # Create two columns for graph properties
+            cols = st.columns(2)
+            for idx, (prop, value) in enumerate(graph_props.items()):
+                with cols[idx % 2]:
+                    st.metric(prop, f"{value:.2f}" if isinstance(value, float) else value)
 
 # Add information about usage
 st.sidebar.markdown("""
