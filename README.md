@@ -4,7 +4,7 @@
 
 Interactive molecular graph visualization tool that combines molecular structure and graph theory.
 
-![App Screenshot]([https://graphmol-nexus.streamlit.app/~/+/media/5c40900c7a5678658471c8b9aa327a92ae31b52c030b06172ec17cf9.png])
+![App Screenshot](https://graphmol-nexus.streamlit.app/~/+/media/5c40900c7a5678658471c8b9aa327a92ae31b52c030b06172ec17cf9.png)
 
 ## Features
 
