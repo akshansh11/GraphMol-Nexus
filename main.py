@@ -111,7 +111,7 @@ def get_molecule_properties(mol):
     return properties
 
 # Main Streamlit app
-st.title("MoleculeVortex")
+st.title("🌀 MoleculeVortex")
 st.write("Convert molecular structures into interactive graph visualizations")
 
 # Input section
