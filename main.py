@@ -1,4 +1,4 @@
-pip install rdkit
+import rdkit
 import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
