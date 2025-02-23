@@ -3,7 +3,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-os.environ['RDKIT_CANVAS'] = '1'  # Enable RDKit canvas
+os.environ['RDKIT_CANVAS'] = '1'
 
 try:
     import rdkit
@@ -14,80 +14,22 @@ try:
     from rdkit.Chem import rdDepictor
     rdDepictor.SetPreferCoordGen(True)
 except ImportError:
-    st.error("""RDKit import failed. Please run these commands:
-    ```
-    pip install rdkit-pypi
-    ```
-    """)
+    st.error("Please install RDKit: pip install rdkit-pypi")
     st.stop()
 
-# Set page configuration
-st.set_page_config(page_title="MoleculeVortex", layout="wide")
-
-# Custom CSS for better visibility
+# Simple CSS without backgrounds
 st.markdown("""
     <style>
     .stApp {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        background-color: white;
     }
-    .stButton>button {
-        background: linear-gradient(90deg, #4CAF50, #45a049);
-        color: white;
-        font-weight: bold;
-        border: none;
-        border-radius: 5px;
-        box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
-    }
-    .stButton>button:hover {
-        box-shadow: 0 0 25px rgba(76, 175, 80, 0.5);
-    }
-    .css-1d391kg {
-        background: rgba(22, 33, 62, 0.9);
-    }
-    .stTitle {
-        text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
-        color: white !important;
-    }
-    h1, h2, h3 {
-        color: #4CAF50 !important;
-        text-shadow: 0 0 5px rgba(76, 175, 80, 0.2);
-    }
-    /* Make ALL metric text white and bright */
-    div[data-testid="stMetricValue"] > div {
-        color: white !important;
-        font-size: 2rem !important;
-        font-weight: 600 !important;
-        text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-    }
-    div[data-testid="stMetricLabel"] {
-        color: white !important;
-        font-size: 1rem !important;
-        font-weight: 500 !important;
-        opacity: 0.9;
-    }
-    /* Make metric cards more visible */
-    div[data-testid="metric-container"] {
-        background-color: rgba(255, 255, 255, 0.1) !important;
-        border-radius: 8px !important;
-        padding: 10px !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    }
-    div[data-testid="metric-container"]:hover {
-        background-color: rgba(255, 255, 255, 0.15) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    }
-    .stMetric {
-        background: rgba(255, 255, 255, 0.05);
-        padding: 15px;
-        border-radius: 10px;
-        border: 1px solid rgba(76, 175, 80, 0.2);
-        margin: 5px;
-    }
-    .stMarkdown, .stText {
-        color: white !important;
+    [data-testid="metric-container"] {
+        background: none !important;
+        border: none !important;
+        box-shadow: none !important;
     }
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 def create_molecular_graph(smiles):
     """Convert SMILES to molecular graph using NetworkX"""
@@ -96,10 +38,7 @@ def create_molecular_graph(smiles):
         if mol is None:
             return None, None
         
-        # Generate 2D coordinates for the molecule
         rdDepictor.Compute2DCoords(mol)
-        
-        # Create graph
         G = nx.Graph()
         
         # Add nodes (atoms)
@@ -124,23 +63,20 @@ def create_molecular_graph(smiles):
         return None, None
 
 def visualize_graph(G, mol):
-    """Create an interactive visualization of the molecular graph"""
+    """Create visualization of the molecular graph"""
     try:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 7))
-        fig.patch.set_facecolor('#1a1a2e')
         
-        # Plot molecular structure with dark background
-        drawer = Draw.rdDepictor.Compute2DCoords(mol)
-        img = Draw.MolToImage(mol, size=(400, 400), background=(26, 26, 46))  # Match app background
+        # Plot molecular structure
+        img = Draw.MolToImage(mol, size=(400, 400))
         ax1.imshow(img)
         ax1.axis('off')
-        ax1.set_title('Molecular Structure', pad=20, fontsize=14, color='white')
-        ax1.set_facecolor('#1a1a2e')
+        ax1.set_title('Molecular Structure', pad=20)
         
         # Plot graph representation
         pos = nx.spring_layout(G, k=1, iterations=50)
         
-        # Create color map for atoms
+        # Color map for atoms
         atom_colors = {
             1: '#FFFFFF',   # H - White
             6: '#808080',   # C - Gray
@@ -154,25 +90,23 @@ def visualize_graph(G, mol):
             53: '#800080'   # I - Purple
         }
         
-        # Draw nodes with different colors based on atomic number
+        # Draw nodes
         node_colors = [atom_colors.get(G.nodes[node]['atomic_num'], '#FFFFFF') 
                       for node in G.nodes()]
         nx.draw_networkx_nodes(G, pos, node_color=node_colors, 
-                             node_size=1000, alpha=0.7, ax=ax2,
-                             edgecolors='white', linewidths=2)  # Add white borders
+                             node_size=1000, alpha=0.7, ax=ax2)
         
-        # Draw edges with varying thickness based on bond type
+        # Draw edges
         edge_weights = [G[u][v]['bond_type'] * 2 for u, v in G.edges()]
         nx.draw_networkx_edges(G, pos, width=edge_weights, 
-                             edge_color='cyan', alpha=0.7, ax=ax2)  # Brighter edge color
+                             edge_color='gray', alpha=0.5, ax=ax2)
         
-        # Add labels with white text
+        # Add labels
         labels = {i: G.nodes[i]['symbol'] for i in G.nodes()}
         nx.draw_networkx_labels(G, pos, labels, font_size=12, 
-                              font_weight='bold', ax=ax2, font_color='white')
+                              font_weight='bold', ax=ax2)
         
-        ax2.set_title('Graph Representation', pad=20, fontsize=14, color='white')
-        ax2.set_facecolor('#1a1a2e')
+        ax2.set_title('Graph Representation', pad=20)
         ax2.axis('off')
         
         plt.tight_layout()
@@ -182,7 +116,7 @@ def visualize_graph(G, mol):
         return None
 
 def get_molecule_properties(mol):
-    """Calculate and return basic molecular properties"""
+    """Calculate molecular properties"""
     try:
         properties = {
             'Molecular Weight': Descriptors.ExactMolWt(mol),
@@ -200,11 +134,11 @@ def get_molecule_properties(mol):
         st.error(f"Error calculating properties: {str(e)}")
         return {}
 
-# Main Streamlit app
-st.title("🌀 MoleculeVortex")
+# App header
+st.title("GraphMol Nexus")
 st.write("Convert molecular structures into interactive graph visualizations")
 
-# Input section
+# Input options
 st.sidebar.header("Input Options")
 input_type = st.sidebar.selectbox("Choose input method", 
                                  ["SMILES", "Example Molecules"])
@@ -226,10 +160,9 @@ else:
                                            list(example_molecules.keys()))
     smiles_input = example_molecules[selected_molecule]
 
-# Display current SMILES
 st.sidebar.text_area("Current SMILES:", smiles_input, height=100)
 
-# Convert and visualize
+# Process and display
 if smiles_input:
     G, mol = create_molecular_graph(smiles_input)
     
@@ -241,24 +174,22 @@ if smiles_input:
         if fig is not None:
             st.pyplot(fig)
         
-        # Display molecular properties
-        st.header("Molecular Properties")
+        # Display properties
+        st.markdown('<h2 style="color: #4CAF50;">Molecular Properties</h2>', 
+                   unsafe_allow_html=True)
         properties = get_molecule_properties(mol)
         
         if properties:
-            # Create three columns for properties
             cols = st.columns(3)
             for idx, (prop, value) in enumerate(properties.items()):
                 with cols[idx % 3]:
                     st.metric(
                         prop,
-                        f"{value:.2f}" if isinstance(value, float) else value,
-                        delta=None,
-                        help=f"Value for {prop}"
+                        f"{value:.2f}" if isinstance(value, float) else value
                     )
             
-            # Display graph properties
-            st.markdown('<h2 style="color: #4CAF50;">Graph Properties</h2>', unsafe_allow_html=True)
+            st.markdown('<h2 style="color: #4CAF50;">Graph Properties</h2>', 
+                       unsafe_allow_html=True)
             graph_props = {
                 "Number of Nodes": G.number_of_nodes(),
                 "Number of Edges": G.number_of_edges(),
@@ -266,18 +197,15 @@ if smiles_input:
                 "Graph Density": nx.density(G)
             }
             
-            # Create two columns for graph properties
             cols = st.columns(2)
             for idx, (prop, value) in enumerate(graph_props.items()):
                 with cols[idx % 2]:
                     st.metric(
                         prop,
-                        f"{value:.2f}" if isinstance(value, float) else value,
-                        delta=None,
-                        help=f"Value for {prop}"
+                        f"{value:.2f}" if isinstance(value, float) else value
                     )
 
-# Add information about usage
+# Sidebar information
 st.sidebar.markdown("""
 ## How to Use
 1. Choose input method (SMILES or Example Molecules)
@@ -286,5 +214,6 @@ st.sidebar.markdown("""
 4. Explore molecular and graph properties
 
 ## About SMILES
-SMILES (Simplified Molecular Input Line Entry System) is a specification for describing the structure of chemical molecules using short ASCII strings.
+SMILES (Simplified Molecular Input Line Entry System) is a specification for 
+describing the structure of chemical molecules using short ASCII strings.
 """)
