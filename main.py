@@ -129,9 +129,9 @@ def visualize_graph(G, mol):
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 7))
         fig.patch.set_facecolor('#1a1a2e')
         
-        # Plot molecular structure
+        # Plot molecular structure with dark background
         drawer = Draw.rdDepictor.Compute2DCoords(mol)
-        img = Draw.MolToImage(mol, size=(400, 400))
+        img = Draw.MolToImage(mol, size=(400, 400), background=(26, 26, 46))  # Match app background
         ax1.imshow(img)
         ax1.axis('off')
         ax1.set_title('Molecular Structure', pad=20, fontsize=14, color='white')
@@ -158,17 +158,18 @@ def visualize_graph(G, mol):
         node_colors = [atom_colors.get(G.nodes[node]['atomic_num'], '#FFFFFF') 
                       for node in G.nodes()]
         nx.draw_networkx_nodes(G, pos, node_color=node_colors, 
-                             node_size=1000, alpha=0.7, ax=ax2)
+                             node_size=1000, alpha=0.7, ax=ax2,
+                             edgecolors='white', linewidths=2)  # Add white borders
         
         # Draw edges with varying thickness based on bond type
         edge_weights = [G[u][v]['bond_type'] * 2 for u, v in G.edges()]
         nx.draw_networkx_edges(G, pos, width=edge_weights, 
-                             edge_color='lightblue', alpha=0.5, ax=ax2)
+                             edge_color='cyan', alpha=0.7, ax=ax2)  # Brighter edge color
         
-        # Add labels
+        # Add labels with white text
         labels = {i: G.nodes[i]['symbol'] for i in G.nodes()}
         nx.draw_networkx_labels(G, pos, labels, font_size=12, 
-                              font_weight='bold', ax=ax2)
+                              font_weight='bold', ax=ax2, font_color='white')
         
         ax2.set_title('Graph Representation', pad=20, fontsize=14, color='white')
         ax2.set_facecolor('#1a1a2e')
