@@ -22,7 +22,7 @@ except ImportError:
     st.stop()
 
 # Set page configuration
-st.set_page_config(page_title="GraphMol Nexus", layout="wide")
+st.set_page_config(page_title="MoleculeVortex", layout="wide")
 
 # Custom CSS for better visibility
 st.markdown("""
@@ -200,7 +200,7 @@ def get_molecule_properties(mol):
         return {}
 
 # Main Streamlit app
-st.title("GraphMol Nexus")
+st.title("🌀 MoleculeVortex")
 st.write("Convert molecular structures into interactive graph visualizations")
 
 # Input section
