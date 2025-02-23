@@ -3,3 +3,4 @@ rdkit
 networkx 
 matplotlib 
 numpy
+pillow
