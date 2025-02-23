@@ -2,35 +2,14 @@ import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
-import subprocess
-import pkg_resources
-
-# Function to install required packages
-def install_packages():
-    try:
-        # Install rdkit specifically for Python 3.9
-        subprocess.check_call([f"{sys.executable}", "-m", "pip", "install", "rdkit==2023.3.2"])
-    except Exception as e:
-        st.error(f"Failed to install packages: {str(e)}")
-        return False
-    return True
-
-# Try importing rdkit, install if not present
+# Import RDKit
 try:
     from rdkit import Chem
     from rdkit.Chem import Draw
     from rdkit.Chem import AllChem
 except ImportError:
-    st.warning("Installing required packages...")
-    if install_packages():
-        try:
-            from rdkit import Chem
-            from rdkit.Chem import Draw
-            from rdkit.Chem import AllChem
-        except ImportError:
-            st.error("Failed to import RDKit. Please ensure you're using Python 3.9")
-            st.stop()
+    st.error("Please install RDKit using: pip install rdkit")
+    st.stop()
 
 # Set page configuration
 st.set_page_config(page_title="MoleculeVortex", layout="wide")
