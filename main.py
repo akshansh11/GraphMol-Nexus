@@ -257,7 +257,7 @@ if smiles_input:
                     )
             
             # Display graph properties
-            st.header("Graph Properties")
+            st.markdown('<h2 style="color: #4CAF50;">Graph Properties</h2>', unsafe_allow_html=True)
             graph_props = {
                 "Number of Nodes": G.number_of_nodes(),
                 "Number of Edges": G.number_of_edges(),
